@@ -25,7 +25,7 @@ public class Program
         var part2 = File.ReadLines("input.txt")
             .Select(line => line.Split(';'))
             .Select(games => games.Select(game => Regex.Matches(game, cubeRegex).Select(m => (count: int.Parse(m.Groups[1].Value), color: m.Groups[2].Value)).ToDictionary(g => g.color, g => g.count)))
-            .Select(games => new[] { "red", "green", "blue"}.Select(c => games.Max(g => g.GetValueOrDefault(c, int.MinValue))).Aggregate(1, (acc, next) => acc * next))
+            .Select(games => new[] { "red", "green", "blue" }.Select(c => games.Max(g => g.GetValueOrDefault(c, int.MinValue))).Aggregate(1, (acc, next) => acc * next))
             .Sum();
         Console.WriteLine(part2);
     }
