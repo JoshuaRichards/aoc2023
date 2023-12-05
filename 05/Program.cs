@@ -6,7 +6,7 @@ public class Program
 {
     public static void Main()
     {
-        var input = "example.txt";
+        var input = "input.txt";
         var seeds = Regex.Matches(File.ReadLines(input).First(), @"\d+").Select(m => long.Parse(m.Value)).ToArray();
         var mapKeys = new[]
         {
@@ -34,19 +34,12 @@ public class Program
         });
         Console.WriteLine(part1);
 
+        var part2Length = Enumerable.Range(0, seeds.Length).Where(i => i % 2 == 1).Sum(i => seeds[i]);
         var part2Seeds = Enumerable.Range(0, seeds.Length / 2).Select(i => i * 2).SelectMany(i => LongRange(seeds[i], seeds[i + 1]));
-            // .Min(seed =>
-            // {
-            //     var current = seed;
-            //     foreach (var k in mapKeys)
-            //     {
-            //         current = mapper.MapNumber(k, current);
-            //     }
-            //     return current;
-            // });
-        
+
         var minLock = new object();
         var part2 = long.MaxValue;
+        var count = 0;
         Parallel.ForEach(part2Seeds, seed =>
         {
             var current = seed;
@@ -57,60 +50,14 @@ public class Program
             lock (minLock)
             {
                 part2 = Math.Min(current, part2);
+                count += 1;
+                if (count % 1_000_000 == 0)
+                {
+                    Console.WriteLine($"done {count:n0} of {part2Length:n0}");
+                }
             }
         });
         Console.WriteLine(part2);
-        // Console.WriteLine(part2);
-        // var fullMappings = mapper.Mappings[mapKeys[0]];
-        // foreach (var key in mapKeys.Skip(1))
-        // {
-        //     fullMappings = fullMappings.SelectMany(m => CrossMapping(m, mapper.Mappings[key])).ToArray();
-        // }
-        // Console.WriteLine(fullMappings);
-    }
-
-    private static IEnumerable<Mapping> CrossMapping(Mapping left, Mapping[] right)
-    {
-        var rightQueue = new Queue<Mapping>(right.Where(r => r.Source + r.Length >= left.Dest).OrderBy(r => r.Source));
-        while (left.Length > 0)
-        {
-            if (!rightQueue.TryDequeue(out var nextRight))
-            {
-                yield return left;
-                yield break;
-            }
-            if (left.Dest < nextRight.Source)
-            {
-                var prelude = new Mapping
-                {
-                    Source = left.Source,
-                    Dest = left.Dest,
-                    Length = Math.Min(left.Length, nextRight.Source - left.Dest)
-                };
-                yield return prelude;
-                left = new Mapping
-                {
-                    Source = left.Source + prelude.Length,
-                    Dest = left.Dest + prelude.Length,
-                    Length = left.Length - prelude.Length,
-                };
-                if (left.Length <= 0) yield break;
-            }
-            var end = Math.Min(left.Dest + left.Length, nextRight.Source + nextRight.Length);
-            var ret = new Mapping
-            {
-                Source = left.Source,
-                Dest = nextRight.Dest,
-                Length = end - left.Dest,
-            };
-            yield return ret;
-            left = new Mapping
-            {
-                Source = left.Source + ret.Length,
-                Dest = left.Dest + ret.Length,
-                Length = left.Length - ret.Length,
-            };
-        }
     }
 
     private static IEnumerable<long> LongRange(long start, long count)
@@ -150,14 +97,12 @@ public class Program
 public class Mapper
 {
     public required Dictionary<string, Mapping[]> Mappings { get; set; }
-    // private Dictionary<(string, long), long> Cache { get; set; } = new();
 
     public long MapNumber(string mapKey, long input)
     {
-        // if (Cache.TryGetValue((mapKey, input), out var cached)) return cached;
-
-        return /*Cache[(mapKey, input)] =*/ MapNumber(Mappings[mapKey], input);
+        return MapNumber(Mappings[mapKey], input);
     }
+
     private static long MapNumber(Mapping[] mappings, long input)
     {
         var mapping = mappings.FirstOrDefault(m => input >= m.Source && input < m.Source + m.Length);
