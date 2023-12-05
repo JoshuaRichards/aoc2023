@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 using Point = (int x, int y);
 
@@ -11,7 +12,7 @@ public class Program
         var (numbers, grid) = ParseInput();
         var part1 = numbers
             .Where(num =>
-                GetNeighbours(num.Spaces, grid)
+                GetNeighbours(num.Spaces)
                     .Select(n => grid.GetValueOrDefault(n, '.'))
                     .Any(c => c != '.')
             )
@@ -22,7 +23,7 @@ public class Program
         var part2 = grid
             .Where(kvp => kvp.Value == '*')
             .Select(kvp => kvp.Key)
-            .Select(p => GetNeighbours([p], grid))
+            .Select(p => GetNeighbours([p]))
             .Select(neighbours => neighbours.Where(n => numLookup.ContainsKey(n)))
             .Select(neighbours => neighbours.Select(n => numLookup[n]).DistinctBy(n => n.Value).ToArray())
             .Where(n => n.Length == 2)
@@ -31,13 +32,13 @@ public class Program
         Console.WriteLine(part2);
     }
 
-    public static Point[] GetNeighbours(Point[] spaces, Dictionary<Point, char> grid)
+    public static Point[] GetNeighbours(Point[] spaces)
     {
-        var directions = new Point[] {(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)};
+        Point[] directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)];
         return spaces.SelectMany(space => directions.Select(d => (space.x + d.x, space.y + d.y))).Except(spaces).ToArray();
     }
 
-    public static (Number[], Dictionary<(int x, int y), char>) ParseInput()
+    public static (Number[], Dictionary<Point, char>) ParseInput()
     {
         var grid = new Dictionary<Point, char>();
         var numbers = new List<Number>();
